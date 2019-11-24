@@ -231,11 +231,10 @@ def handle_phone(update, context):
         'имеил снова')
         update.message.reply_text(text)
         return EMAIL_INFO
-    try:
-        int(user_message)
-    except ValueError:
+    if not user_message.isdigit():
         text = 'Телефон не распознан, попробуйте отправить его ещё раз!'
         update.message.reply_text(text)
+        return
     if ((user_message.startswith('8') or user_message.startswith('+7')) and
         (len(user_message) == 11 or len(user_message) == 12)):
 
