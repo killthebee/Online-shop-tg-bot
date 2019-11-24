@@ -91,7 +91,7 @@ MOLTIN_CLIENT_ID
 
 ```
 
-clien id from moltin
+client id from moltin
 
 
 
