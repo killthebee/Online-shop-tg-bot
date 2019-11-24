@@ -290,7 +290,7 @@ def main():
     logger = logging.getLogger(__name__)
 
     token = os.environ.get['TG_TOKEN']
-    updater = Updater("1028224246:AAFlO6MyaWN3j5DSeH89xQwFGiat_I_5ZBE", use_context=True)
+    updater = Updater(token, use_context=True)
 
     dp = updater.dispatcher
 
