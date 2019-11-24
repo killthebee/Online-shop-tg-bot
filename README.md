@@ -28,7 +28,8 @@ pip install -r requirements.txt
 
 ```
 
-You need to get yourself bot token here>[botFather](https://medium.com/shibinco/create-a-telegram-bot-using-botfather-and-get-the-api-token-900ba00e0f39). Also, you gonna need to make your own redis DB [Redis](https://redislabs.com/)
+You need to get yourself bot token here>[botFather](https://medium.com/shibinco/create-a-telegram-bot-using-botfather-and-get-the-api-token-900ba00e0f39). Also, you gonna need to make your own redis DB [Redis](https://redislabs.com/) and crate online shop with [Moltin](https://www.moltin.com/).
+
 
 ### Launch example
 
@@ -83,6 +84,13 @@ TG_TOKEN
 TG bot token
 
 ```
+
+MOLTIN_CLIENT_ID
+
+```
+
+clien id from moltin
+
 
 
 
