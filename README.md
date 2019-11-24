@@ -3,7 +3,9 @@
 
 
 This bot is up to sell you some fish, you can try to resist temptation at @smells_fish_bot in Telegram!
-
+<p align="center">
+  <img src="https://github.com/killthebee/Online-shop-tg-bot/blob/master/gif/demonstration.gif"/>
+</p>
 
 
 ### How to install
