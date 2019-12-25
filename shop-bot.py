@@ -4,8 +4,9 @@ from telegram.ext import (Updater, CommandHandler, CallbackQueryHandler,
 import logging
 import redis_db as r
 import moltin
-import time
+from functools import partial
 import os
+
 
 STORE, PRODUCT, CONFIRMATION, INCART, EMAIL_INFO, PHONE_INFO, CONFIRM_INFO = range(7)
 
@@ -103,12 +104,7 @@ def add_to_cart(update, context):
     pcs = int(query.data[3:5])
     prod_id = query.data[5:]
     moltin.add_to_cart(pcs, prod_id, user_id)
-    bot.edit_message_text(
-        chat_id=query.message.chat_id,
-        message_id=query.message.message_id,
-        text='готово',
-    )
-    time.sleep(1)
+    update.callback_query.answer('Готово!', alert=True)
     bot.delete_message(
          chat_id=query.message.chat_id,
          message_id=query.message.message_id,
@@ -144,13 +140,13 @@ def cart_handler(update, context):
     items = moltin.fetch_products_in_cart(user_id)
     total_value = 0
     text = ''
-    for item_data in items:
+    for item in items:
 
-        name_raw = item_data['name']
-        description_raw = item_data['description']
-        price = item_data['unit_price']['amount']/100
+        name_raw = item['name']
+        description_raw = item['description']
+        price = item['unit_price']['amount']/100
         price_raw = '$%s per piece'%(price)
-        quantity = item_data['quantity']
+        quantity = item['quantity']
         total_value_of_item = round(quantity * price, 2)
         quantity_raw = '%spc/pcs in cart for $%s'%(quantity, total_value_of_item)
 
@@ -164,11 +160,12 @@ def cart_handler(update, context):
         total_value = total_value + total_value_of_item
         inline_keyboard_button_text = 'Удалить %s'%(name_raw)
 
-        callback_data = 'delete%s'%(item_data['id'])
+        callback_data = 'delete%s'%(item['id'])
         delete_button = [InlineKeyboardButton(inline_keyboard_button_text, callback_data=callback_data)]
         keyboard.insert(-2, delete_button)
 
-    text = text + 'Total: %s'%(total_value)
+    total_value_text = 'Total: %s'%(total_value)
+    text = text + total_value_text
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     bot.delete_message(
@@ -187,7 +184,6 @@ def ask_for_user_email(update, context):
 
     query = update.callback_query
     user_id = query.from_user.id
-    r.write_user_info_to_db(user_id, 'email')
     bot = context.bot
     bot.send_message(
         chat_id=query.message.chat_id,
@@ -199,7 +195,9 @@ def ask_for_user_email(update, context):
 def handle_email(update, context):
 
     user_message = update.message.text
-    user_id = update.message.from_user.id
+    info_update = update.message
+    user = update.message.from_user
+    user_id = user.id
     if '@' not in user_message or '.' not in user_message:
 
         text = 'Имеил не распознан, попробуйте отправить имеил ещё раз!'
@@ -231,10 +229,11 @@ def handle_phone(update, context):
         'имеил снова')
         update.message.reply_text(text)
         return EMAIL_INFO
-    if not user_message.isdigit():
+    try:
+        int(user_message)
+    except ValueError:
         text = 'Телефон не распознан, попробуйте отправить его ещё раз!'
         update.message.reply_text(text)
-        return
     if ((user_message.startswith('8') or user_message.startswith('+7')) and
         (len(user_message) == 11 or len(user_message) == 12)):
 
@@ -269,7 +268,7 @@ def confirm_info(update, context):
         return EMAIL_INFO
 
 
-def error(update, context):
+def handle_error(update, context, logger):
 
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
@@ -283,36 +282,39 @@ def end(update, context):
 
 def main():
 
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                        level=logging.INFO)
-
-    logger = logging.getLogger(__name__)
-
     token = os.environ.get['TG_TOKEN']
     updater = Updater(token, use_context=True)
 
     dp = updater.dispatcher
 
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                        level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
+    handle_error_partial = partial(handle_error, logger=logger)
+
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
             STORE: [CallbackQueryHandler(create_product_page)],
-            PRODUCT: [CallbackQueryHandler(start, pattern='^' + 'FALLBACK' + '$'),
-                     CallbackQueryHandler(cart_handler, pattern='^' + 'TOCART' + '$'),
-                     CallbackQueryHandler(confirm, pattern='^' + '(?s)^[0-9]{2}.*' + '$')],
-            CONFIRMATION: [CallbackQueryHandler(cancel, pattern='^' + 'FALLBACK' + '$'),
-                          CallbackQueryHandler(add_to_cart, pattern='^' +'(?s)^([^a-zA-Z]*[A-Za-z]){3}.*'+'$')],
-            INCART: [CallbackQueryHandler(start, pattern='^' + 'FALLBACK' + '$'),
-                    CallbackQueryHandler(cart_handler, pattern='^' +'(?s)^([^a-zA-Z]*[A-Za-z]){6}.*'+'$'),
-                    CallbackQueryHandler(ask_for_user_email, pattern='^' +'PAY'+'$')],
+            PRODUCT: [CallbackQueryHandler(start, pattern='FALLBACK'),
+                     CallbackQueryHandler(cart_handler, pattern='TOCART'),
+                     CallbackQueryHandler(confirm, pattern=r'^(?s)^[0-9]{2}.*$')],
+            CONFIRMATION: [CallbackQueryHandler(cancel, pattern='FALLBACK'),
+                          CallbackQueryHandler(add_to_cart, pattern=r'^(?s)^([^a-zA-Z]*[A-Za-z]){3}.*$')],
+            INCART: [CallbackQueryHandler(start, pattern='FALLBACK'),
+                    CallbackQueryHandler(cart_handler, pattern=r'^(?s)^([^a-zA-Z]*[A-Za-z]){6}.*$'),
+                    CallbackQueryHandler(ask_for_user_email, pattern='PAY')],
             EMAIL_INFO: [MessageHandler(Filters.text, handle_email)],
             PHONE_INFO: [MessageHandler(Filters.text, handle_phone)],
-            CONFIRM_INFO: [CallbackQueryHandler(confirm_info, pattern='^' +'(?s)^([^a-zA-Z]*[A-Za-z]){5}.*'+'$')],
+            CONFIRM_INFO: [CallbackQueryHandler(confirm_info, pattern=r'^(?s)^([^a-zA-Z]*[A-Za-z]){5}.*$')],
         },
         fallbacks=[CommandHandler('end', end)]
     )
+
     dp.add_handler(conv_handler)
-    dp.add_error_handler(error)
+    dp.add_error_handler(handle_error_partial)
+
 
     updater.start_polling()
 

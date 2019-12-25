@@ -22,15 +22,11 @@ Then use `pip` (or `pip3`, if there is a conflict with Python2) to install depen
 
 ```
 
-
-
 pip install -r requirements.txt
-
-
 
 ```
 
-You need to get yourself bot token here>[botFather](https://medium.com/shibinco/create-a-telegram-bot-using-botfather-and-get-the-api-token-900ba00e0f39). Also, you gonna need to make your own redis DB [Redis](https://redislabs.com/) and crate online shop with [Moltin](https://www.moltin.com/).
+You need to get yourself bot token here > [botFather](https://medium.com/shibinco/create-a-telegram-bot-using-botfather-and-get-the-api-token-900ba00e0f39). Also, you gonna need to make your own redis DB [Redis](https://redislabs.com/) and crate online shop with [Moltin](https://www.moltin.com/).
 
 
 ### Launch example
@@ -43,11 +39,7 @@ First, you need to set up enviroment variables as listed below, then launch app 
 
 ```
 
-
-
 python shop-bot.py
-
-
 
 ```
 
@@ -91,7 +83,7 @@ MOLTIN_CLIENT_ID
 
 ```
 
-client id from moltin
+clien id from moltin
 
 
 
