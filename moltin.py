@@ -2,6 +2,16 @@ import requests
 import os
 
 
+def check_response(response, description):
+
+    response.raise_for_status()
+    json_response = response.json()
+    if 'errors' in json_response:
+    #https://docs.moltin.com/api/basics/errors
+        raise requests.exceptions.HTTPError('%s, %S'%(description, json_response['errors']))
+    return json_response
+
+
 def fetch_bearer_token():
 
     client_id = os.environ.get['MOLTIN_CLIENT_ID']
@@ -9,10 +19,9 @@ def fetch_bearer_token():
       'client_id': client_id,
       'grant_type': 'implicit'
     }
-    response = requests.post('https://api.moltin.com/oauth/access_token', data=data).json()
-    if 'errors' in response:
-        raise requests.exceptions.HTTPError('Failed to fetch Bearer Token')
-    token = response['access_token']
+    response = requests.post('https://api.moltin.com/oauth/access_token', data=data)
+    checked_response = check_response(response, 'Failed to fetch Bearer Token')
+    token = checked_response['access_token']
     return token
 
 
@@ -22,10 +31,9 @@ def fetch_products():
     headers = {'Authorization': 'Bearer %s'%(token)}
 
     url='https://api.moltin.com/v2/products/'
-    response = requests.get(url, headers=headers).json()
-    if 'errors' in response:
-        raise requests.exceptions.HTTPError('Failed to fetch products')
-    products = response['data']
+    response = requests.get(url, headers=headers)
+    checked_response = check_response(response, 'Failed to fetch products')
+    products = checked_response['data']
     name_and_id_pairs = []
     for product in products:
         product_name = product['name']
@@ -41,18 +49,18 @@ def fetch_product_data(prod_id):
     headers = {'Authorization': 'Bearer %s'%(token)}
 
     url = 'https://api.moltin.com/v2/products/%s'%(prod_id)
-    response = requests.get(url, headers=headers).json()
-    if 'errors' in response:
-        raise requests.exceptions.HTTPError('Failed to fetch product data')
-    _data = response['data']
+    response = requests.get(url, headers=headers)
+    checked_response = check_response(response, 'Failed to fetch product data')
+    _data = checked_response['data']
     name = _data['name']
     price = '%s$ for 1pc'%(_data['price'][0]['amount']*0.01)
     stock = '%s pcs on stock'%(_data['meta']['stock']['level'])
     description = _data['description']
     media_id = _data['relationships']['main_image']['data']['id']
     url = 'https://api.moltin.com/v2/files/%s'%(media_id)
-    response = requests.get(url, headers=headers).json()
-    photo_url = response['data']['link']['href']
+    response = requests.get(url, headers=headers)
+    checked_response = check_response(response, 'Failed to fetch product photo')
+    photo_url = checked_response['data']['link']['href']
     product_data = {
         'name': name,
         'price': price,
@@ -70,9 +78,8 @@ def delete_item(user_id, query):
 
     prod_id = query.data[6:]
     url = 'https://api.moltin.com/v2/carts/%s/items/%s'%(user_id, prod_id)
-    response = requests.delete(url=url, headers=headers).json()
-    if 'errors' in response:
-        raise requests.exceptions.HTTPError('Failed to delete item')
+    response = requests.delete(url=url, headers=headers)
+    check_response(response, 'Failed to delete item')
 
 
 def fetch_products_in_cart(user_id):
@@ -81,10 +88,9 @@ def fetch_products_in_cart(user_id):
     headers = {'Authorization': 'Bearer %s'%(token)}
 
     url = 'https://api.moltin.com/v2/carts/%s/items'%(user_id)
-    response = requests.get(url=url, headers=headers).json()
-    if 'errors' in response:
-        raise requests.exceptions.HTTPError('Failed to fetch products in cart')
-    items_in_cart = response['data']
+    response = requests.get(url=url, headers=headers)
+    checked_response = check_response(response, 'Failed to fetch products in cart')
+    items_in_cart = checked_response['data']
     return items_in_cart
 
 
@@ -102,8 +108,10 @@ def create_customer(name, email):
            'email': email,
            }
     }
-    response = requests.post(url, headers=headers, json=data).json()
-    return False if 'errors' in response else True
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+    json_response = response.json()
+    return False if 'errors' in json_response else True
 
 
 def add_to_cart(pcs, prod_id, user_id):
@@ -123,5 +131,4 @@ def add_to_cart(pcs, prod_id, user_id):
     }
     url = 'https://api.moltin.com/v2/carts/%s/items'%(user_id)
     response = requests.post(url=url, headers=headers, json=data)
-    if 'errors' in response:
-        raise requests.exceptions.HTTPError('Failed to add to cart')
+    check_response(response, 'Failed to add to cart')
