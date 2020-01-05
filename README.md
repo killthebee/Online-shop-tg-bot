@@ -21,9 +21,7 @@ Then use `pip` (or `pip3`, if there is a conflict with Python2) to install depen
 
 
 ```
-
 pip install -r requirements.txt
-
 ```
 
 You need to get yourself bot token here > [botFather](https://medium.com/shibinco/create-a-telegram-bot-using-botfather-and-get-the-api-token-900ba00e0f39). Also, you gonna need to make your own redis DB [Redis](https://redislabs.com/) and crate online shop with [Moltin](https://www.moltin.com/).
@@ -38,9 +36,7 @@ First, you need to set up enviroment variables as listed below, then launch app 
 
 
 ```
-
 python shop-bot.py
-
 ```
 
 ### Environment variables
@@ -49,31 +45,11 @@ python shop-bot.py
 
 ```REDIS_PORT``` - Port of your Redis DB.
 
-```
+```REDIS_PASWORD``` - Redis DB password
 
-REDIS_PASWORD
+```TG_TOKEN``` - TG bot token
 
-```
-
-Redis DB password
-
-```
-
-TG_TOKEN
-
-```
-
-TG bot token
-
-```
-
-MOLTIN_CLIENT_ID
-
-```
-
-clien id from moltin
-
-
+```MOLTIN_CLIENT_ID``` - Client id from moltin
 
 
 ### Project Goals
