@@ -45,11 +45,7 @@ python shop-bot.py
 
 ### Environment variables
 
-```
-
-REDIS_HOST
-
-```
+```REDIS_HOST```
 
 Host of your Redis DB.
 
